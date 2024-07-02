@@ -49,25 +49,27 @@ struct ThreadData{
 class matchingEngine{
 
 private:
-    vector<int> node_of_matching;
-    ThreadData *args;
-    int number_of_thread;
-    int number_of_node_for_last_matching;
-    CSRGraph *graph;
-    PatternGraph * patternGraph;
+    vector<int> node_of_matching;  //record all the matching (n*m) m is the number of the node in pattern graph
+    ThreadData *args; //the data collection of the data passing to threads
+    int number_of_thread;  //number of threads to do the matching
+    int number_of_node_for_last_matching; //the number of matching for the last round
+    CSRGraph *graph;  //point to the CSRGraph object created in main
+    PatternGraph * patternGraph;  //point to the PatternGraph object in main 
 
-    //data used in the function of prepare for the data
+    //data used in the function of prepare for the data that passed to threads
     int **passing_node_to_thread_of_each;
     DataPassingToThreads **dataPassingToThreads;
     int *number_of_matching;
     int* neighbor_of_prenode;
 
 public:
-    matchingEngine(int aNumber_of_thread,CSRGraph* aGraph,PatternGraph * aPatternGraph);
-    ThreadData * get_the_data_prepared(int matching_round,int index_of_snapshot);
-    int receiving_the_data(DataForPassingBack* ptr_get);
-    vector<int> getNode_of_matching();
-    void Round_cleaner(int matching_round);
+    //get the private data
+    vector<int> getNode_of_matching();  
+
+    matchingEngine(int aNumber_of_thread,CSRGraph* aGraph,PatternGraph * aPatternGraph); 
+    ThreadData * get_the_data_prepared(int matching_round,int index_of_snapshot);  //get the data that passing to each threads
+    int receiving_the_data(DataForPassingBack* ptr_get);  //receive the data that passing back from threads
+    void Round_cleaner(int matching_round);  //delete the data
 };
 
 
