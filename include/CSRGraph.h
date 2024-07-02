@@ -30,8 +30,8 @@ private:
     static int max_index; // the maximum number of all nodes
     int max_degree; // the maximum degree among all nodes in the entire graph
 
-    int *col_indices;    // delete this??? edge array in the CSR for the original graph
-    int *row_offsets;    //  delete this??? vertex array in the CSR for the original graph
+    int *col_indices;    // edge array in the CSR for the original graph
+    int *row_offsets;    //  vertex array in the CSR for the original graph
 
     int *true_index;    //  real vertex ID -> organized vertex ID
     static int *query_list; // organized vertex ID -> real vertex ID
@@ -41,7 +41,7 @@ private:
     static vector <int> ss_col_indices; // the edge array for the latest snapshots
     static int * ss_row_offsets; // the vertex array for the latest snapshots
 
-    int m_snapshots; // ??? the number of snapshots; default = 16;
+    int m_snapshots; //the number of snapshots; default = 16;
 
     static bool compare(const int* a, const int* b);
     void removeDuplicates();
@@ -54,6 +54,7 @@ public:
     CSRGraph(); // constructor
     ~CSRGraph() { clear(); }
 
+    //get the private var
     int getNode();
     int getEdge();
     int getMaxDegree();
@@ -62,16 +63,16 @@ public:
     int * getRow_offsets();
     int * getTrue_index();
     int * getQuery_list();
-
     int getTheNumberOfSnapshots();
 
+    //set the value of var
     void setSizeOfSnapshot(int s);
     void setOriginal_Ratio(int r);
 
     void loadTheGraph(char *pathname); // read the graph from a file in "pathname", generate the original graph
     void clear(); // delete all arrays created;
-    void generate_one_snapshot(int _ins_ratio, int _del_ratio,int round_index); // ????
-    void Generate_Snapshots(int _num_snapshots, int _original_ratio);
+    void generate_one_snapshot(int _ins_ratio, int _del_ratio,int round_index); // be used in the Generate_Snapshots
+    void Generate_Snapshots(int _num_snapshots, int _original_ratio);  //generate n snapshot with the first one contain 1/ratio edges
     bool check_neighbor_exist(int _v_a,int _v_b,int index_of_snapshot); // checking whether two vertices are neighbours in a snapshot
     static vector <int> getTheNeighbor(int _v_a, int index_of_snapshot); // return all neighbours of node _v_a_ in a snapshot
 
