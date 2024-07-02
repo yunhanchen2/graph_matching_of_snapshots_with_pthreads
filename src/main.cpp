@@ -131,7 +131,6 @@ int main(int argc,char* argv[]) {
         //get the pattern graph
         int e;
         int nod;
-
         cout<<"input the number of edge and node pattern graph"<<endl;
         cin>>e>>nod;
 
@@ -146,11 +145,13 @@ int main(int argc,char* argv[]) {
         //find out the restriction of nodes
         patternGraph.getNeighborRestriction();
 
+        
         //get the data graph
         char *pathname = argv[1];
 
         graph.loadTheGraph(pathname);//read+sort
 
+        
         //do the matching
         cout<<"Input the number of the snapshots and the original ratio: "<<endl;
         int num_ss, ratio;
@@ -158,20 +159,21 @@ int main(int argc,char* argv[]) {
         graph.Generate_Snapshots(num_ss,ratio);
 
         pthread_t tid[number_of_thread];
-
         int counter=0;
 
         for(int r=0;r<graph.getTheNumberOfSnapshots();r++){
             //record time
             auto start = system_clock::now();
 
+            //create a matchingEngine
             matchingEngine engine(number_of_thread,&graph,&patternGraph);
 
             for(int i=0;i<patternGraph.getNode();i++){
-
+                //get the data for passing to threads
                 ThreadData * args;
                 args=engine.get_the_data_prepared(i,r);
 
+                //create the pthreads
                 for(int p=0;p<number_of_thread;p++){
                     pthread_create(&tid[p], NULL, graph_matching_threads, &args[p]);
                 }
@@ -184,11 +186,10 @@ int main(int argc,char* argv[]) {
                     pthread_join(tid[p], &(ptr[p]));
                     ptr_get[p]=*((DataForPassingBack*) (ptr[p]));
                 }
-
                 counter=engine.receiving_the_data(ptr_get);
 
+                //deleting
                 delete [] ptr;
-
                 engine.Round_cleaner(i);
             }
 
@@ -196,6 +197,7 @@ int main(int argc,char* argv[]) {
             auto duration= duration_cast<microseconds>(end-start);
             cout<<"time of matching for the snapshot#"<<r<<" is: "<<double (duration.count())*microseconds ::period ::num/microseconds::period::den<<endl;
 
+            //cut the duplicate
             set < set<int> > ss;
             for(int i=0;i<counter;i++){
                 set<int> each;
