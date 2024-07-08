@@ -38,23 +38,33 @@ void* graph_matching_threads(void *n){
 
     int round=dataPassingToThreads->index_of_snapshot;
 
+    passingBack->_old=0;
+    passingBack->_new=0;
+
     if(dataPassingToThreads->round_index==0){
         //only check the degree
         for (int j = 0; j < dataPassingToThreads->number_of_matching; j++) {//满足其邻居条件以后,j为candidate node中的jth元素
-
             //get the neighbor
             vector <int> neighbor = graph.getTheNeighbor(dataPassingToThreads->passing_node_to_thread_of_each[j],round);
 
             if ( neighbor.size() >= dataPassingToThreads->num_of_neighbor[dataPassingToThreads->order[dataPassingToThreads->round_index]] ) {//degree也满足了
                 passingBack->matching_node.push_back(dataPassingToThreads->passing_node_to_thread_of_each[j]);//存新match的
                 passingBack->number_of_matching_node++;
+                passingBack->_old++;
+                passingBack->matching_weight.push_back(0);
             }
-
         }
 
     } else {
         int *tem;
         for(int i=0;i<dataPassingToThreads->number_of_matching;i++){
+            int status=dataPassingToThreads->matching_weight_to_thread_of_each[i];
+
+//            //testing
+//            pthread_mutex_lock(&mu);
+//            cout<<"the original status is: "<<status<<endl;
+//            pthread_mutex_unlock(&mu);
+
             //each time pick one group
             tem=new int[dataPassingToThreads->round_index];
             for(int j=0;j<dataPassingToThreads->round_index;j++){
@@ -100,6 +110,36 @@ void* graph_matching_threads(void *n){
                 }
             }
 
+            //check the status
+            for(int j=0;j<back.size();j++){
+                for(int k=0;k<dataPassingToThreads->size_of_neighbor_of_prenode_pattern;k++){
+                    if(status!=1){
+                        status=graph.check_adding_status(tem[dataPassingToThreads->neighbor_of_prenode_pattern[k]],back[j],round);
+
+//                        //testing
+//                        pthread_mutex_lock(&mu);
+//                        cout<<"the status of "<<tem[dataPassingToThreads->neighbor_of_prenode_pattern[k]]<<" and "<<back[j]<<"is: "<<status<<endl;
+//                        pthread_mutex_unlock(&mu);
+
+
+                    } else {
+                        break;
+                    }
+                }
+
+//                pthread_mutex_lock(&mu);
+//                cout<<"the final status is: "<<status<<endl;
+//                pthread_mutex_unlock(&mu);
+
+                if(status==1){
+                    passingBack->_new++;
+                    passingBack->matching_weight.push_back(1);
+                } else {
+                    passingBack->_old++;
+                    passingBack->matching_weight.push_back(0);
+                }
+            }
+
             //check the degree
             for (int j = 0; j < back.size(); j++) {//满足其邻居条件以后,j为candidate node中的jth元素
                 if (graph.getTheNeighbor(back[j],round).size() >= dataPassingToThreads->num_of_neighbor[dataPassingToThreads->order[dataPassingToThreads->round_index]]) {//degree也满足了
@@ -116,6 +156,12 @@ void* graph_matching_threads(void *n){
         }
     }
 
+
+//    //testing
+//    pthread_mutex_lock(&mu);
+//    cout<<"the number of old is: "<<passingBack->_old<<" and the number of new is: "<<passingBack->_new<<endl;
+//    pthread_mutex_unlock(&mu);
+
     pthread_exit(passingBack);
 }
 
@@ -131,6 +177,7 @@ int main(int argc,char* argv[]) {
         //get the pattern graph
         int e;
         int nod;
+
         cout<<"input the number of edge and node pattern graph"<<endl;
         cin>>e>>nod;
 
@@ -145,13 +192,11 @@ int main(int argc,char* argv[]) {
         //find out the restriction of nodes
         patternGraph.getNeighborRestriction();
 
-        
         //get the data graph
         char *pathname = argv[1];
 
         graph.loadTheGraph(pathname);//read+sort
 
-        
         //do the matching
         cout<<"Input the number of the snapshots and the original ratio: "<<endl;
         int num_ss, ratio;
@@ -159,24 +204,25 @@ int main(int argc,char* argv[]) {
         graph.Generate_Snapshots(num_ss,ratio);
 
         pthread_t tid[number_of_thread];
+
         int counter=0;
 
         for(int r=0;r<graph.getTheNumberOfSnapshots();r++){
             //record time
             auto start = system_clock::now();
 
-            //create a matchingEngine
             matchingEngine engine(number_of_thread,&graph,&patternGraph);
 
             for(int i=0;i<patternGraph.getNode();i++){
-                //get the data for passing to threads
+
                 ThreadData * args;
                 args=engine.get_the_data_prepared(i,r);
 
-                //create the pthreads
+
                 for(int p=0;p<number_of_thread;p++){
                     pthread_create(&tid[p], NULL, graph_matching_threads, &args[p]);
                 }
+
 
                 //get vectors in each thread and merge them together
                 DataForPassingBack* ptr_get=new DataForPassingBack[number_of_thread];
@@ -186,10 +232,11 @@ int main(int argc,char* argv[]) {
                     pthread_join(tid[p], &(ptr[p]));
                     ptr_get[p]=*((DataForPassingBack*) (ptr[p]));
                 }
-                counter=engine.receiving_the_data(ptr_get);
 
-                //deleting
+                counter=engine.receiving_the_data(ptr_get,i);
+
                 delete [] ptr;
+
                 engine.Round_cleaner(i);
             }
 
@@ -197,7 +244,6 @@ int main(int argc,char* argv[]) {
             auto duration= duration_cast<microseconds>(end-start);
             cout<<"time of matching for the snapshot#"<<r<<" is: "<<double (duration.count())*microseconds ::period ::num/microseconds::period::den<<endl;
 
-            //cut the duplicate
             set < set<int> > ss;
             for(int i=0;i<counter;i++){
                 set<int> each;
@@ -207,7 +253,9 @@ int main(int argc,char* argv[]) {
                 ss.insert(each);
             }
 
+            double ratio=engine.get_the_duplicate_ratio();
             cout<<"total counting for the snapshot#"<<r<<" is: "<<ss.size()<<endl;
+            cout<<"duplicate ratio for the snapshot#"<<r<<" is: "<<ratio<<endl;
         }
 
     }
