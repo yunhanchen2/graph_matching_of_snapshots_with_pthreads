@@ -233,6 +233,7 @@ vector<int> CSRGraph::generateUniqueRandomInts(int n, int m) {
 void CSRGraph::Generate_Snapshots(int _num_snapshots, int _original_ratio){
     m_snapshots=_num_snapshots;
     original_ratio=_original_ratio;
+    ss_adding_edge.resize((m_snapshots-1)*2);
 
     //load the snapshot#0
     ss_neighbor_number=new int*[m_snapshots]();
@@ -304,6 +305,8 @@ void CSRGraph::generate_one_snapshot(int _ins_ratio, int _del_ratio,int round_in
     int size=(edge/2)/original_ratio;
     int number_of_add=size/_ins_ratio;
     int number_of_delete=size/_del_ratio;
+    ss_adding_edge[(round_index-1)*2].resize(number_of_add*2);
+    ss_adding_edge[(round_index-1)*2+1].resize(number_of_add*2);
 
     vector <int> random_change=generateUniqueRandomInts((edge/2)-1,edge/2);
 
@@ -369,7 +372,13 @@ void CSRGraph::generate_one_snapshot(int _ins_ratio, int _del_ratio,int round_in
     //record the change and get a new row_offset
     sort(array_change, array_change + array_ptr, compare);
 
-
+    //store the ss_adding_edge
+    for(int i=0;i<(number_of_add+number_of_delete)*2;i++){
+        if(array_change[i][0]>0){
+            ss_adding_edge[(round_index-1)*2].push_back(array_change[i][0]);
+            ss_adding_edge[(round_index-1)*2+1].push_back(array_change[i][1]);
+        }
+    }
 
 //    //testing
 //        cout<<"the changing nodes for the round #"<<round_index<<endl;
@@ -437,7 +446,6 @@ void CSRGraph::generate_one_snapshot(int _ins_ratio, int _del_ratio,int round_in
         int adder=0;
 
         if(true_index[i]==edge_change[change_ptr]) {
-
             //将变化的插入到col_indices中
             int position = ss_row_offsets[i + 1]+add_parameter;
             for (int j = changing_row_offset[change_ptr]; j < changing_row_offset[change_ptr + 1]; j++) {
@@ -474,6 +482,20 @@ void CSRGraph::generate_one_snapshot(int _ins_ratio, int _del_ratio,int round_in
 //            cout<<ss_neighbor_number[round_index][i]<<" ";
 //        }
 //        cout<<endl;
+
+
+//testing
+//cout<<"checking whether 5&13 are adding edge"<<endl;
+//if(check_adding_status(5,13,round_index)){ cout<<"yes!"<<endl; } else { cout<<"no!"<<endl; }
+//cout<<"checking whether 5&14 are adding edge"<<endl;
+//if(check_adding_status(5,14,round_index)){ cout<<"yes!"<<endl; } else { cout<<"no!"<<endl; }
+//cout<<"checking whether 13&14 are adding edge"<<endl;
+//if(check_adding_status(13,14,round_index)){ cout<<"yes!"<<endl; } else { cout<<"no!"<<endl; }
+//cout<<"checking whether 13&22 are adding edge"<<endl;
+//if(check_adding_status(13,22,round_index)){ cout<<"yes!"<<endl; } else { cout<<"no!"<<endl; }
+//cout<<"checking whether 14&22 are adding edge"<<endl;
+//if(check_adding_status(14,22,round_index)){ cout<<"yes!"<<endl; } else { cout<<"no!"<<endl; }
+//
 
 
     //deleting
@@ -516,3 +538,15 @@ int CSRGraph::max_index = 0;
 int *CSRGraph::ss_row_offsets = nullptr;
 int **CSRGraph::ss_neighbor_number = nullptr;
 std::vector<int> CSRGraph::ss_col_indices;
+std::vector< vector<int> > CSRGraph::ss_adding_edge;
+
+int CSRGraph::check_adding_status(int _v_a, int _v_b, int ss_index){
+    int status=0;
+    for(int i=0;i<ss_adding_edge[(ss_index-1)*2].size();i++){
+        if(ss_adding_edge[(ss_index-1)*2][i]==_v_a&&ss_adding_edge[(ss_index-1)*2+1][i]==_v_b){
+            status=1;
+            break;
+        }
+    }
+    return status;
+}
