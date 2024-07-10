@@ -292,8 +292,8 @@ void CSRGraph::Generate_Snapshots(int _num_snapshots, int _original_ratio){
     delete [] array_0;
 
     //generate the i-th snapshot
-    int add_percent=10;
-    int delete_percent=10;
+    int add_percent=5;
+    int delete_percent=5;
 
     for(int r=1;r<m_snapshots;r++){
         generate_one_snapshot(add_percent,delete_percent,r);
@@ -429,8 +429,6 @@ void CSRGraph::generate_one_snapshot(int _ins_ratio, int _del_ratio,int round_in
 //        cout<<endl;
 
 
-
-
     //deleting
     delete [] temp_array;
     delete [] numFrequency;
@@ -520,12 +518,12 @@ vector <int> CSRGraph::getTheNeighbor(int a,int index_of_snapshot){
     }
     int size=0;
     for(int i=0;i<max_index+1;i++){
-
         if(temp[i]>0){
             size++;
             neighbor.push_back(i);
         }
     }
+
     neighbor.resize(size);
 
 
@@ -541,6 +539,9 @@ std::vector<int> CSRGraph::ss_col_indices;
 std::vector< vector<int> > CSRGraph::ss_adding_edge;
 
 int CSRGraph::check_adding_status(int _v_a, int _v_b, int ss_index){
+    if(ss_index==0){
+        return 0;
+    }
     int status=0;
     for(int i=0;i<ss_adding_edge[(ss_index-1)*2].size();i++){
         if(ss_adding_edge[(ss_index-1)*2][i]==_v_a&&ss_adding_edge[(ss_index-1)*2+1][i]==_v_b){
