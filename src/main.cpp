@@ -35,18 +35,18 @@ void* graph_matching_threads(void *n){
     DataForPassingBack *passingBack=new DataForPassingBack();
 
     passingBack->number_of_matching_node=0;
-
-    int round=dataPassingToThreads->index_of_snapshot;
-
     passingBack->_old=0;
     passingBack->_new=0;
+    passingBack->matching_weight.clear();
+    passingBack->matching_node.clear();
+
+    int round=dataPassingToThreads->index_of_snapshot;
 
     if(dataPassingToThreads->round_index==0){
         //only check the degree
         for (int j = 0; j < dataPassingToThreads->number_of_matching; j++) {//满足其邻居条件以后,j为candidate node中的jth元素
             //get the neighbor
             vector <int> neighbor = graph.getTheNeighbor(dataPassingToThreads->passing_node_to_thread_of_each[j],round);
-
             if ( neighbor.size() >= dataPassingToThreads->num_of_neighbor[dataPassingToThreads->order[dataPassingToThreads->round_index]] ) {//degree也满足了
                 passingBack->matching_node.push_back(dataPassingToThreads->passing_node_to_thread_of_each[j]);//存新match的
                 passingBack->number_of_matching_node++;
@@ -57,6 +57,7 @@ void* graph_matching_threads(void *n){
 
     } else {
         int *tem;
+
         for(int i=0;i<dataPassingToThreads->number_of_matching;i++){
             int status=dataPassingToThreads->matching_weight_to_thread_of_each[i];
 
@@ -66,7 +67,7 @@ void* graph_matching_threads(void *n){
 //            pthread_mutex_unlock(&mu);
 
             //each time pick one group
-            tem=new int[dataPassingToThreads->round_index];
+            tem=new int[dataPassingToThreads->round_index]();
             for(int j=0;j<dataPassingToThreads->round_index;j++){
                 tem[j]=dataPassingToThreads->passing_node_to_thread_of_each[i*dataPassingToThreads->round_index+j];
             }
@@ -121,7 +122,6 @@ void* graph_matching_threads(void *n){
 //                        cout<<"the status of "<<tem[dataPassingToThreads->neighbor_of_prenode_pattern[k]]<<" and "<<back[j]<<"is: "<<status<<endl;
 //                        pthread_mutex_unlock(&mu);
 
-
                     } else {
                         break;
                     }
@@ -129,8 +129,10 @@ void* graph_matching_threads(void *n){
 
 //                pthread_mutex_lock(&mu);
 //                cout<<"the final status is: "<<status<<endl;
-//                pthread_mutex_unlock(&mu);
+//                pthread_mutex_u,.nlock(&mu);
+            }
 
+            for(int j=0;j<back.size();j++){
                 if(status==1){
                     passingBack->_new++;
                     passingBack->matching_weight.push_back(1);
@@ -138,6 +140,7 @@ void* graph_matching_threads(void *n){
                     passingBack->_old++;
                     passingBack->matching_weight.push_back(0);
                 }
+
             }
 
             //check the degree
@@ -214,47 +217,69 @@ int main(int argc,char* argv[]) {
             matchingEngine engine(number_of_thread,&graph,&patternGraph);
 
             for(int i=0;i<patternGraph.getNode();i++){
+                ThreadData * arggs;
+                arggs=engine.get_the_data_prepared(i,r);
 
-                ThreadData * args;
-                args=engine.get_the_data_prepared(i,r);
+
+                //testing
+                cout<<"testing1"<<endl;
 
 
                 for(int p=0;p<number_of_thread;p++){
-                    pthread_create(&tid[p], NULL, graph_matching_threads, &args[p]);
+                    pthread_create(&tid[p], NULL, graph_matching_threads, &arggs[p]);
                 }
+
+
+                //testing
+                cout<<"testing2"<<endl;
 
 
                 //get vectors in each thread and merge them together
                 DataForPassingBack* ptr_get=new DataForPassingBack[number_of_thread];
                 void ** ptr=new void * [number_of_thread];
 
+                //testing
+                cout<<"testing3"<<endl;
+
                 for (int p = 0; p < number_of_thread; p++) {
-                    pthread_join(tid[p], &(ptr[p]));
+                    if(pthread_join(tid[p], &(ptr[p]))==0){
+                        cout<<"success!"<<endl;
+                    } else {
+                        cout<<"fail!"<<endl;
+                    }
                     ptr_get[p]=*((DataForPassingBack*) (ptr[p]));
                 }
 
+                //testing
+                cout<<"testing4"<<endl;
+
                 counter=engine.receiving_the_data(ptr_get,i);
+
+                //testing
+                cout<<"testing5"<<endl;
 
                 delete [] ptr;
 
                 engine.Round_cleaner(i);
+
+                delete [] ptr_get;
             }
 
             auto end = system_clock::now();
             auto duration= duration_cast<microseconds>(end-start);
-            cout<<"time of matching for the snapshot#"<<r<<" is: "<<double (duration.count())*microseconds ::period ::num/microseconds::period::den<<endl;
-
-            set < set<int> > ss;
-            for(int i=0;i<counter;i++){
-                set<int> each;
-                for(int j=0;j<patternGraph.getNode();j++){
-                    each.insert(engine.getNode_of_matching()[i*patternGraph.getNode()+j]);
-                }
-                ss.insert(each);
-            }
+//            cout<<"time of matching for the snapshot#"<<r<<" is: "<<double (duration.count())*microseconds ::period ::num/microseconds::period::den<<endl;
+//
+//            set < set<int> > ss;
+//            for(int i=0;i<counter;i++){
+//                set<int> each;
+//                for(int j=0;j<patternGraph.getNode();j++){
+//                    each.insert(engine.getNode_of_matching()[i*patternGraph.getNode()+j]);
+//                }
+//                ss.insert(each);
+//            }
 
             double ratio=engine.get_the_duplicate_ratio();
-            cout<<"total counting for the snapshot#"<<r<<" is: "<<ss.size()<<endl;
+//            cout<<"total counting for the snapshot#"<<r<<" is: "<<ss.size()<<endl;
             cout<<"duplicate ratio for the snapshot#"<<r<<" is: "<<ratio<<endl;
         }
 
