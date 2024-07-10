@@ -229,11 +229,7 @@ int main(int argc,char* argv[]) {
                 void ** ptr=new void * [number_of_thread];
 
                 for (int p = 0; p < number_of_thread; p++) {
-                    if(pthread_join(tid[p], &(ptr[p]))==0){
-                        cout<<"success!"<<endl;
-                    } else {
-                        cout<<"fail!"<<endl;
-                    }
+                    pthread_join(tid[p], &(ptr[p]));
                     ptr_get[p]=*((DataForPassingBack*) (ptr[p]));
                 }
 
