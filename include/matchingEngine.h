@@ -14,7 +14,6 @@ using namespace chrono;
 
 class DataPassingToThreads{
 public:
-    CSRGraph * graph;
     int * num_of_neighbor;
     int * order;
     int * passing_node_to_thread_of_each;
@@ -71,7 +70,7 @@ private:
     int **passing_weight_to_thread_of_each;
     DataPassingToThreads **dataPassingToThreads;
     int *number_of_matching;
-    int* neighbor_of_prenode;
+    int * neighbor_of_prenode;
 
 public:
     matchingEngine(int aNumber_of_thread,CSRGraph* aGraph,PatternGraph * aPatternGraph);
