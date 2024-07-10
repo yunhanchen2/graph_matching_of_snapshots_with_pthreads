@@ -220,26 +220,13 @@ int main(int argc,char* argv[]) {
                 ThreadData * arggs;
                 arggs=engine.get_the_data_prepared(i,r);
 
-
-                //testing
-                cout<<"testing1"<<endl;
-
-
                 for(int p=0;p<number_of_thread;p++){
                     pthread_create(&tid[p], NULL, graph_matching_threads, &arggs[p]);
                 }
 
-
-                //testing
-                cout<<"testing2"<<endl;
-
-
                 //get vectors in each thread and merge them together
                 DataForPassingBack* ptr_get=new DataForPassingBack[number_of_thread];
                 void ** ptr=new void * [number_of_thread];
-
-                //testing
-                cout<<"testing3"<<endl;
 
                 for (int p = 0; p < number_of_thread; p++) {
                     if(pthread_join(tid[p], &(ptr[p]))==0){
@@ -250,13 +237,7 @@ int main(int argc,char* argv[]) {
                     ptr_get[p]=*((DataForPassingBack*) (ptr[p]));
                 }
 
-                //testing
-                cout<<"testing4"<<endl;
-
                 counter=engine.receiving_the_data(ptr_get,i);
-
-                //testing
-                cout<<"testing5"<<endl;
 
                 delete [] ptr;
 
