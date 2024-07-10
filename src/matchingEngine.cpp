@@ -13,7 +13,6 @@ using namespace chrono;
 
 matchingEngine::matchingEngine(int aNumber_of_thread, CSRGraph * aGraph, PatternGraph * aPatternGraph){
     number_of_thread=aNumber_of_thread;
-    args=new ThreadData[aNumber_of_thread];
     graph=aGraph;
     patternGraph=aPatternGraph;
     number_of_node_for_last_matching=aGraph->getNode();
@@ -22,8 +21,8 @@ matchingEngine::matchingEngine(int aNumber_of_thread, CSRGraph * aGraph, Pattern
 }
 
 ThreadData * matchingEngine::get_the_data_prepared(int matching_round,int index_of_snapshot){
-
     int id=patternGraph->getOrder()[matching_round];
+    args=new ThreadData[number_of_thread]();
     //preparing data
     //query graph中的neighbor限制
     int size_of_neighbor_of_prenode=0;
@@ -35,7 +34,6 @@ ThreadData * matchingEngine::get_the_data_prepared(int matching_round,int index_
         }
         size_of_neighbor_of_prenode=patternGraph->getNeighbor_restriction()[id].size();
     }
-
 
     //lunch the threads
     int full_node_for_each_thread=number_of_node_for_last_matching/number_of_thread;
@@ -84,9 +82,7 @@ ThreadData * matchingEngine::get_the_data_prepared(int matching_round,int index_
 
         dataPassingToThreads[p]=new DataPassingToThreads(passing_node_to_thread_of_each[p],matching_round,neighbor_of_prenode,size_of_neighbor_of_prenode,number_of_matching[p],index_of_snapshot,patternGraph->getNum_of_neighbor(),patternGraph->getOrder(),passing_weight_to_thread_of_each[p]);
 
-
         args[p].data = dataPassingToThreads[p];
-
     }
 
     return args;
@@ -105,15 +101,11 @@ int matchingEngine::receiving_the_data(DataForPassingBack* ptr_get,int round_ind
         counter+=ptr_get[p].number_of_matching_node;
         _old_acc+=ptr_get[p]._old;
         _new_acc+=ptr_get[p]._new;
-
         node_of_matching.insert(node_of_matching.end(),ptr_get[p].matching_node.begin(),ptr_get[p].matching_node.end());
         weight_of_matching.insert(weight_of_matching.end(),ptr_get[p].matching_weight.begin(),ptr_get[p].matching_weight.end());
     }
-    number_of_node_for_last_matching=counter;
 
-    if(ptr_get!=nullptr){
-        delete [] ptr_get;
-    }
+    number_of_node_for_last_matching=counter;
 
 //    //testing
 //    cout<<"the matching of node: "<<endl;
@@ -152,10 +144,12 @@ void matchingEngine::Round_cleaner(int matching_round){
             delete [] passing_node_to_thread_of_each[d];
         }
     }
+    delete [] passing_node_to_thread_of_each;
 
     for(int d=0;d<number_of_thread;d++){
         delete [] passing_weight_to_thread_of_each[d];
     }
+    delete [] passing_weight_to_thread_of_each;
 
     if(patternGraph->getNeighbor_restriction()[id].size()!=0){
         delete [] neighbor_of_prenode;
@@ -165,6 +159,8 @@ void matchingEngine::Round_cleaner(int matching_round){
         delete [] number_of_matching;
     }
 
+    delete [] args;
+    delete [] dataPassingToThreads;
 }
 
 double matchingEngine::get_the_duplicate_ratio(){
