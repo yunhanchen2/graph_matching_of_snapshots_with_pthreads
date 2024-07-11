@@ -16,8 +16,8 @@ matchingEngine::matchingEngine(int aNumber_of_thread, CSRGraph * aGraph, Pattern
     graph=aGraph;
     patternGraph=aPatternGraph;
     number_of_node_for_last_matching=aGraph->getNode();
-    _old_counter=new int[aPatternGraph->getNode()];
-    _new_counter=new int[aPatternGraph->getNode()];
+    _old_counter=new int[aPatternGraph->getNode()]();
+    _new_counter=new int[aPatternGraph->getNode()]();
 }
 
 ThreadData * matchingEngine::get_the_data_prepared(int matching_round,int index_of_snapshot){
